@@ -47,6 +47,24 @@
 //     int message_size = strlen(buf);
 // }
 
+static int fat_use_log_create(void){
+    fat_volume vol;
+    fat_tree_node file_node;
+    //Aca creo que para manejar errores deberia haber algo de errno, lo vi en varias funciones
+    vol = get_fat_volume();
+    file_node = fat_tree_node_search(vol->file_tree, LOG_FILE_PATH);
+    if (file_node != NULL){
+        DEBUG("ya existe el archivo mi rey");
+        return 1;
+    }
+    int mknod_res = fat_fuse_mknod(LOG_FILE_PATH, 0, 0);
+    if (mknod_res != 0){
+        DEBUG("NO SE PUEDE CREAR");
+        return 1;   
+    }
+    return 0;
+}
+
 
 /* Get file attributes (file descriptor version) */
 int fat_fuse_fgetattr(const char *path, struct stat *stbuf,
@@ -161,6 +179,8 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         }
         child++;
     }
+
+    fat_use_log_create();
     return 0;
 }
 

@@ -3,8 +3,10 @@
 
 #define BB_LOG_FILE "/bb/fs.log"
 #define BB_DIRNAME "/bb"
+#define LOG_FILE_PATH "/" LOG_FILE_BASENAME "." LOG_FILE_EXTENSION
 #define LOG_FILE_BASENAME "fs"
 #define LOG_FILE_EXTENSION "log"
+
 
 #include "fat_file.h"
 
