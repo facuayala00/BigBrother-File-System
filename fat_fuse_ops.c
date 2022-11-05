@@ -13,6 +13,7 @@
 #include "fat_util.h"
 #include "fat_volume.h"
 #include <alloca.h>
+#include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <gmodule.h>
 #include <libgen.h>
@@ -50,18 +51,32 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
 static int fat_use_log_create(void){
     fat_volume vol;
     fat_tree_node file_node;
-    //Aca creo que para manejar errores deberia haber algo de errno, lo vi en varias funciones
+    errno = 0;
     vol = get_fat_volume();
     file_node = fat_tree_node_search(vol->file_tree, LOG_FILE_PATH);
     if (file_node != NULL){
         DEBUG("ya existe el archivo mi rey");
-        return 1;
+        return -errno;
     }
     int mknod_res = fat_fuse_mknod(LOG_FILE_PATH, 0, 0);
     if (mknod_res != 0){
         DEBUG("NO SE PUEDE CREAR");
-        return 1;   
+        return -errno;   
     }
+
+    file_node = fat_tree_node_search(vol->file_tree, LOG_FILE_PATH);
+    if (file_node == NULL){
+        DEBUG("No se encuentra el archivo 1");
+        return -errno;
+    }
+
+    fat_file log_node = fat_tree_get_file(file_node);
+    if (log_node == NULL) {
+        DEBUG("No se encuentra el archivo 2");
+        return  -errno;
+    }
+
+
     return 0;
 }
 
