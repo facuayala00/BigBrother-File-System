@@ -192,4 +192,10 @@ void fat_file_truncate(fat_file file, off_t offset, fat_file parent);
 ssize_t fat_file_pwrite(fat_file file, const void *buf, size_t size,
                         off_t offset, fat_file parent);
 
+/* cambios parte 3: la venganza...
+ * es una inspiracion del truncate (como bien recomiendan los profes)
+ * 
+*/
+void fat_file_unlink(fat_file file, fat_file parent);
+
 #endif /* _FAT_FILE_H */
