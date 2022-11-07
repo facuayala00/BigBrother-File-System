@@ -389,18 +389,33 @@ int fat_fuse_unlink(const char *path) {
     //hasta este punto es todo igual a truncate
 
     parent = fat_tree_get_parent(file_node); 
-    fat_tree_inc_num_times_opened(file_node); //tiene snetido esto??? xd
+
     fat_file_unlink(file, parent);
     fat_tree_delete(vol->file_tree, path); //hay que eliminarlo del arbol
     //sin esta linea el archivo sigue estando hasta que desmontemos el disco ja
-    
+
     return -errno;
 }
 
+/*para esta funcion espero hacer algo similar que unlink pero con directorios*/
 int fat_fuse_rmdir(const char *path) {
     errno = 0;
-    path = path;
-    printf("jaja rmdir \n");
+    fat_volume vol = get_fat_volume();
+    fat_file file = NULL, parent = NULL;
+    fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
+    if (file_node == NULL || errno != 0) {
+        errno = ENOENT;
+        return -errno;
+    }
+    file = fat_tree_get_file(file_node);
+    if (!fat_file_is_directory(file)) //(en comparacion al truncate) cambio el chqueo de error
+        return -ENOTDIR;
 
+
+    parent = fat_tree_get_parent(file_node); 
+
+    fat_file_unlink(file, parent);
+    fat_tree_delete(vol->file_tree, path); 
+    
     return -errno;
 }
