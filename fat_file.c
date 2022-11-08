@@ -335,13 +335,14 @@ void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf) {
 
 void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     u32 nentries = parent->dir.nentries;
+    child->pos_in_parent = nentries; //cambios que vimos en el zulip
     write_dir_entry(parent, child);
     if (errno != 0) {
         return;
     }
     DEBUG("Adding child \"%s\" to \"%s\" in position %u", child->name,
           parent->filepath, parent->dir.nentries);
-    child->pos_in_parent = nentries;
+    //child->pos_in_parent = nentries;
     parent->dir.nentries++;
 }
 
@@ -591,10 +592,9 @@ void fat_file_unlink(fat_file file, fat_file parent) {
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
-    // Free clusters
-    u32 last_cluster = file->start_cluster;
-    u32 next_cluster = 0;
-
+    u32 last_cluster = file->start_cluster; //empiezo en el primer cluster
+    u32 next_cluster = 0;   //inicializo el "proximo
+    
     //saco este cachito de truncate
     //la idea aca es ir marcando los clusters como libre
     while (fat_table_cluster_is_valid(last_cluster)) {

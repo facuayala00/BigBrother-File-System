@@ -386,9 +386,8 @@ int fat_fuse_unlink(const char *path) {
     file = fat_tree_get_file(file_node);
     if (fat_file_is_directory(file))
         return -EISDIR;
-    //hasta este punto es todo igual a truncate
-
     parent = fat_tree_get_parent(file_node); 
+    //hasta este punto es todo igual a truncate
 
     fat_file_unlink(file, parent);
     fat_tree_delete(vol->file_tree, path); //hay que eliminarlo del arbol
@@ -404,13 +403,21 @@ int fat_fuse_rmdir(const char *path) {
     fat_file file = NULL, parent = NULL;
     fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
     if (file_node == NULL || errno != 0) {
-        errno = ENOENT;
+        errno = ENOTDIR;
         return -errno;
     }
     file = fat_tree_get_file(file_node);
-    if (!fat_file_is_directory(file)) //(en comparacion al truncate) cambio el chqueo de error
+    if (!fat_file_is_directory(file)) // cambio el chqueo de error (en comparacion al truncate)
         return -ENOTDIR;
-
+    
+    GList *children = fat_file_read_children(file);
+    bool is_empty = children == NULL; //chequea si se encontro algo
+    g_list_free(children);
+    if (!is_empty) {
+        errno = ENOTEMPTY;
+        return -errno;
+    }
+    //faltaria chequear si el coso esta en uso
 
     parent = fat_tree_get_parent(file_node); 
 
