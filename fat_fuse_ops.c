@@ -98,7 +98,9 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     strcat(buf, "\t");
     strcat(buf, operation_type);
     strcat(buf, "\n");
-    fat_fuse_write_log(buf);
+    if (!fat_file_cmp_path(file, LOG_FILE_PATH) == 0){
+        fat_fuse_write_log(buf);
+    }
     //int message_size = strlen(buf);
 }
 
@@ -221,7 +223,7 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         }
         child++;
     }
-    
+
     fat_use_log_create();
     return 0;
 }
