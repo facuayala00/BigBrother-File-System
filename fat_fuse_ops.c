@@ -221,16 +221,7 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         }
         child++;
     }
-    children = fat_tree_flatten_h_children(dir_node);
-    child = children;
-    while (*child != NULL) {
-        error = (*filler)(buf, (*child)->name, NULL, 0);
-        if (error != 0) {
-            return -errno;
-        }
-        child++;
-    }
-
+    
     fat_use_log_create();
     return 0;
 }
