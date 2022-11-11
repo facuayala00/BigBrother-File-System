@@ -27,11 +27,11 @@ u32 search_bb_orphan_dir_cluster() {
     u32 max_clusters = vol->table->num_data_clusters; //funciona para no iterar de mas
 
     while ( bb_dir_start_cluster < max_clusters &&               //bucle iterativo robado de next_free_algo_asi_cluster
-    le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) { //faltaria checkear si es el dir correcto
+    le32_to_cpu(((const le32 *)vol->table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) { //faltaria checkear si es el dir correcto
         bb_dir_start_cluster++;
     }
     if (bb_dir_start_cluster >= max_clusters) {  //caso que no se encontró (primera ejecucion)
-        u32 free_cluster = fat_table_get_next_free_cluster(table);      //se busca uno libre
+        u32 free_cluster = fat_table_get_next_free_cluster(vol->table);      //se busca uno libre
         free_cluster = FAT_CLUSTER_BAD_SECTOR;                          //marquita de bad asi ya queda
         bb_init_log_dir(free_cluster);
     }
