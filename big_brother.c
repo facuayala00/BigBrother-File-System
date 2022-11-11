@@ -22,7 +22,19 @@ int bb_is_log_dirpath(char *filepath) {
  * its index. If the cluster is not found, returns 0.
  */
 u32 search_bb_orphan_dir_cluster() {
-    u32 bb_dir_start_cluster = 0;
+    u32 bb_dir_start_cluster = 2; //2 no 0, ver next_free
+    fat_volume vol = get_fat_volume();
+    u32 max_clusters = vol->table->num_data_clusters; //funciona para no iterar de mas
+
+    while ( bb_dir_start_cluster < max_clusters &&               //bucle iterativo robado de next_free_algo_asi_cluster
+    le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) { //faltaria checkear si es el dir correcto
+        bb_dir_start_cluster++;
+    }
+    if (bb_dir_start_cluster >= max_clusters) {  //caso que no se encontró (primera ejecucion)
+        u32 free_cluster = fat_table_get_next_free_cluster(table);      //se busca uno libre
+        free_cluster = FAT_CLUSTER_BAD_SECTOR;                          //marquita de bad asi ya queda
+        bb_init_log_dir(free_cluster);
+    }
 
     return bb_dir_start_cluster;
 }
@@ -41,17 +53,17 @@ u32 search_bb_orphan_dir_cluster() {
 
 int bb_init_log_dir(u32 start_cluster) {
     errno = 0;
-    // fat_volume vol = NULL;
-    // fat_tree_node root_node = NULL;
+    fat_volume vol = NULL;
+    fat_tree_node root_node = NULL;
 
-    // vol = get_fat_volume();
+    vol = get_fat_volume();
 
-    // // Create a new file from scratch, instead of using a direntry like normally done.
-    // fat_file loaded_bb_dir = fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
+    // Create a new file from scratch, instead of using a direntry like normally done.
+    fat_file loaded_bb_dir = fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
 
-    // // Add directory to file tree. It's entries will be like any other dir.
-    // root_node = fat_tree_node_search(vol->file_tree, "/");
-    // vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
+    // Add directory to file tree. It's entries will be like any other dir.
+    root_node = fat_tree_node_search(vol->file_tree, "/");
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
 
     return -errno;
 }
