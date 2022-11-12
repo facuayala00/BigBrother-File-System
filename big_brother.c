@@ -30,10 +30,8 @@ u32 search_bb_orphan_dir_cluster() {
     le32_to_cpu(((const le32 *)vol->table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) { //faltaria checkear si es el dir correcto
         bb_dir_start_cluster++;
     }
-    if (bb_dir_start_cluster >= max_clusters) {  //caso que no se encontró (primera ejecucion)
-        u32 free_cluster = fat_table_get_next_free_cluster(vol->table);      //se busca uno libre
-        free_cluster = FAT_CLUSTER_BAD_SECTOR;                          //marquita de bad asi ya queda
-        bb_init_log_dir(free_cluster);
+    if (bb_dir_start_cluster >= max_clusters) {
+        bb_dir_start_cluster = 0;
     }
 
     return bb_dir_start_cluster;
@@ -58,12 +56,16 @@ int bb_init_log_dir(u32 start_cluster) {
 
     vol = get_fat_volume();
 
-    // Create a new file from scratch, instead of using a direntry like normally done.
-    fat_file loaded_bb_dir = fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
+    if (start_cluster == 0) {   //caso donde no se encontró el dir
+        start_cluster = fat_table_get_next_free_cluster(vol->table);
+        // Create a new file from scratch, instead of using a direntry like normally done.
+        fat_file loaded_bb_dir = fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
+        start_cluster = FAT_CLUSTER_BAD_SECTOR;
 
-    // Add directory to file tree. It's entries will be like any other dir.
-    root_node = fat_tree_node_search(vol->file_tree, "/");
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
+        // Add directory to file tree. It's entries will be like any other dir.
+        root_node = fat_tree_node_search(vol->file_tree, "/");
+        vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
+    }
 
     return -errno;
 }

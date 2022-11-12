@@ -33,18 +33,18 @@ static int fat_use_log_create(void){
     fat_tree_node file_node;
     errno = 0;
     vol = get_fat_volume();
-    file_node = fat_tree_node_search(vol->file_tree, LOG_FILE_PATH);
+    file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
     if (file_node != NULL){
         DEBUG("ya existe el archivo mi rey");
         return -errno;
     }
-    int mknod_res = fat_fuse_mknod(LOG_FILE_PATH, 0, 0);
+    int mknod_res = fat_fuse_mknod(BB_LOG_FILE, 0, 0);
     if (mknod_res != 0){
         DEBUG("NO SE PUEDE CREAR");
         return -errno;   
     }
 
-    file_node = fat_tree_node_search(vol->file_tree, LOG_FILE_PATH);
+    file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
     if (file_node == NULL){
         DEBUG("No se encuentra el archivo 1");
         return -errno;
@@ -66,7 +66,7 @@ static int fat_fuse_write_log(const char *text){
     fat_file log_file;
     fat_file parent;
     vol = get_fat_volume();
-    log_node = fat_tree_node_search(vol->file_tree,LOG_FILE_PATH);
+    log_node = fat_tree_node_search(vol->file_tree,BB_LOG_FILE);
     if(log_node == NULL){
         DEBUG(LOG_FILE_PATH "no existe el archivo mi rey");
         return 1;
@@ -98,7 +98,7 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     strcat(buf, "\t");
     strcat(buf, operation_type);
     strcat(buf, "\n");
-    if (!fat_file_cmp_path(file, LOG_FILE_PATH) == 0){
+    if (!fat_file_cmp_path(file, BB_LOG_FILE) == 0){
         fat_fuse_write_log(buf);
     }
     //int message_size = strlen(buf);
@@ -223,6 +223,8 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         }
         child++;
     }
+
+    bb_init_log_dir(search_bb_orphan_dir_cluster());
 
     fat_use_log_create();
     return 0;
