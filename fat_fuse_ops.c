@@ -213,7 +213,7 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     child = children;
     while (*child != NULL) {
         // Hide fs.log from ls
-        if (!fat_file_cmp_path(*child, BB_DIRNAME) == 0) {
+        if (!fat_file_cmp_path(*child, "myaa") == 0) {
             error = (*filler)(buf, (*child)->name, NULL, 0);
             if (error != 0) {
                 free(children);
