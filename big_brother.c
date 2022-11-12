@@ -26,17 +26,18 @@ u32 search_bb_orphan_dir_cluster() {
     fat_volume vol = get_fat_volume();
     u32 max_clusters = vol->table->num_data_clusters; //funciona para no iterar de mas
 
-    while ( bb_dir_start_cluster < max_clusters &&               //bucle iterativo robado de next_free_algo_asi_cluster
-    le32_to_cpu(((const le32 *)vol->table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) { //faltaria checkear si es el dir correcto
-        bb_dir_start_cluster++;
-        u32 bytes_per_cluster = fat_table_bytes_per_cluster(vol->table);
-        off_t offset = fat_table_cluster_offset(vol->table, bb_dir_start_cluster);
-        u8 *buf = alloca(bytes_per_cluster);
-        full_pread(vol->table->fd, buf, bytes_per_cluster, offset);
+    while ( bb_dir_start_cluster < max_clusters){ //faltaria checkear si es el dir correcto
+        if (le32_to_cpu(((const le32 *)vol->table->fat_map)[bb_dir_start_cluster]) != FAT_CLUSTER_BAD_SECTOR) {
+            u32 bytes_per_cluster = fat_table_bytes_per_cluster(vol->table);
+            off_t offset = fat_table_cluster_offset(vol->table, bb_dir_start_cluster);
+            u8 *buf = alloca(bytes_per_cluster);
+            full_pread(vol->table->fd, buf, bytes_per_cluster, offset);
 
-        if(bb_is_log_file_dentry((fat_dir_entry) buf)) {
-            break;
+            if(bb_is_log_file_dentry((fat_dir_entry) buf)) {
+                break;
+            }   
         }
+        bb_dir_start_cluster++;
     }
     if (bb_dir_start_cluster >= max_clusters) {
         bb_dir_start_cluster = 0;
