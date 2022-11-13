@@ -588,21 +588,18 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
 }
 
 void fat_file_unlink(fat_file file, fat_file parent) { 
-    //aca calculo que se deberia marcar lo de eliminar,
+    // Se marca el archivo para eliminar y se actualiza el número de entradas del padre
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
+    parent->dir.nentries--;
 
     u32 last_cluster = file->start_cluster; //empiezo en el primer cluster
-    u32 next_cluster = 0;   //inicializo el "proximo
+    u32 next_cluster = 0;   //inicializo el "proximo"
     
-    //saco este cachito de truncate
-    //la idea aca es ir marcando los clusters como libre
+    // Parte de fat_file_truncate que marca clusters como libres
     while (fat_table_cluster_is_valid(last_cluster)) {
-        // If there was an error, we continue with the function.
         next_cluster = fat_table_get_next_cluster(file->table, last_cluster);
         fat_table_set_next_cluster(file->table, last_cluster, FAT_CLUSTER_FREE);
         last_cluster = next_cluster;
     }
-
-
 }

@@ -102,7 +102,6 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     if (!fat_file_cmp_path(file, BB_LOG_FILE) == 0){
         fat_fuse_write_log(buf);
     }
-    //int message_size = strlen(buf);
 }
 
 
@@ -417,20 +416,12 @@ int fat_fuse_rmdir(const char *path) {
         return -errno;
     }
     file = fat_tree_get_file(file_node);
-    if (!fat_file_is_directory(file)) // cambio el chqueo de error (en comparacion al truncate)
+    if (!fat_file_is_directory(file))
         return -ENOTDIR;
-    
-    GList *children = fat_file_read_children(file);
-    bool is_empty = children == NULL; //chequea si se encontro algo
-    g_list_free(children);
-    if (!is_empty) {
-        errno = ENOTEMPTY;
-        return -errno;
-    }
-    //faltaria chequear si el coso esta en uso
+    if(file->dir.nentries != 0) // Borramos solo si el directorio está vacío
+        return -ENOTEMPTY;
 
     parent = fat_tree_get_parent(file_node); 
-
     fat_file_unlink(file, parent);
     fat_tree_delete(vol->file_tree, path); 
     

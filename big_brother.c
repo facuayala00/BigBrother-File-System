@@ -22,9 +22,9 @@ int bb_is_log_dirpath(char *filepath) {
  * its index. If the cluster is not found, returns 0.
  */
 u32 search_bb_orphan_dir_cluster() {
-    u32 bb_dir_start_cluster = 2; //2 no 0, ver next_free
+    u32 bb_dir_start_cluster = 2;
     fat_volume vol = get_fat_volume();
-    u32 max_clusters = 10000; //funciona para no iterar de mas
+    u32 max_clusters = 10000;
 
 
     while ( bb_dir_start_cluster < max_clusters){ 
@@ -32,44 +32,29 @@ u32 search_bb_orphan_dir_cluster() {
             DEBUG("TENGO BAD SECTOR");
             DEBUG("BAD SECTOR %u", bb_dir_start_cluster);
             
-            //las siugientes 5 lineas son para leer los contenidos de ese cluster y castearlo a una entry
+            // Se castean los contenidos del cluster encontrado como una dir_entry
             u32 bytes_per_cluster = fat_table_bytes_per_cluster(vol->table);
             off_t offset = fat_table_cluster_offset(vol->table, bb_dir_start_cluster);
             u8 *buf = alloca(bytes_per_cluster);     
             full_pread(vol->table->fd, buf, bytes_per_cluster, offset);       
             fat_dir_entry dentry = (fat_dir_entry) buf;
 
-            // DEBUG("TIENE NOMBRECITO");
-            // DEBUG("%s",dentry->base_name );
-            if(bb_is_log_file_dentry(dentry)) { //comprobamos si es la nuestra
+            if(bb_is_log_file_dentry(dentry)) {
                 DEBUG("TIENE NOMBRECITO EN CLUSTER %u", bb_dir_start_cluster);
                 DEBUG("NOMBRE: %s",dentry->base_name );
-
-                // free(buf);
                 break;
             }   
         }
-        bb_dir_start_cluster++;
-        // DEBUG("chiquitin %u", bb_dir_start_cluster);        
+        bb_dir_start_cluster++;      
     }
 
-    if (bb_dir_start_cluster >= max_clusters) {     //este chequeo es para el caso que itero una banda 
-        DEBUG("SE FUE LEJOS EL BB");                //y no se llegó a encontrar el bb
-        bb_dir_start_cluster = 0;       //la asignacion a 0 es para que el init_dir lo interprete como que se exedió
+    // Si se iteró de más, se busca un cluster libre
+    if (bb_dir_start_cluster >= max_clusters) {
+        DEBUG("SE FUE LEJOS EL BB");
+        bb_dir_start_cluster = 0;
     }
     return bb_dir_start_cluster;
 }
-
-
-/* Creates the /bb directory as an orphan and adds it to the file tree as 
- * child of root dir.
- */
-// static int bb_create_new_orphan_dir() {
-//     errno = 0;
-//     // ****MOST IMPORTANT PART, DO NOT SAVE DIR ENTRY TO PARENT ****
-
-//     return -errno;
-// }
 
 
 int bb_init_log_dir(u32 start_cluster) {
@@ -79,19 +64,20 @@ int bb_init_log_dir(u32 start_cluster) {
 
     vol = get_fat_volume();
 
-    if(start_cluster == 0) {    //caso muchas iteraciones
+    // Caso donde no se encontró el cluster del directorio
+    if(start_cluster == 0) {
         start_cluster = fat_table_get_next_free_cluster(vol->table);
         DEBUG("%u TOMO ESTE CLUSTER LIBRE", start_cluster);
     }
-        // Create a new file from scratch, instead of using a direntry like normally done.
-        fat_file loaded_bb_dir = fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
-        fat_table_set_next_cluster(vol->table, start_cluster, FAT_CLUSTER_BAD_SECTOR);      //lo marcamos como bad
+    // Create a new file from scratch, instead of using a direntry like normal
+    fat_file loaded_bb_dir =
+        fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
+    fat_table_set_next_cluster(vol->table, start_cluster,
+                               FAT_CLUSTER_BAD_SECTOR);
 
-        // Add directory to file tree. It's entries will be like any other dir.
-        root_node = fat_tree_node_search(vol->file_tree, "/");          //esta partecida me da muchas dudas
-        vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
-    // }
-    
+    // Add directory to file tree. It's entries will be like any other dir.
+    root_node = fat_tree_node_search(vol->file_tree, "/");
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
 
     return -errno;
 }
