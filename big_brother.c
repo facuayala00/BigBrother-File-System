@@ -61,6 +61,7 @@ int bb_init_log_dir(u32 start_cluster) {
     errno = 0;
     fat_volume vol = NULL;
     fat_tree_node root_node = NULL;
+    int isInit = 1;
 
     vol = get_fat_volume();
 
@@ -68,6 +69,7 @@ int bb_init_log_dir(u32 start_cluster) {
     if(start_cluster == 0) {
         start_cluster = fat_table_get_next_free_cluster(vol->table);
         DEBUG("%u TOMO ESTE CLUSTER LIBRE", start_cluster);
+        isInit = 0;
     }
     // Create a new file from scratch, instead of using a direntry like normal
     fat_file loaded_bb_dir =
@@ -78,6 +80,11 @@ int bb_init_log_dir(u32 start_cluster) {
     // Add directory to file tree. It's entries will be like any other dir.
     root_node = fat_tree_node_search(vol->file_tree, "/");
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
+    if(isInit == 1) {
+        root_node = fat_tree_node_search(vol->file_tree,BB_DIRNAME);
+        GList *children = fat_file_read_children(loaded_bb_dir);
+        fat_tree_insert(vol->file_tree,root_node,g_list_nth_data(children,1));
+    }
 
     return -errno;
 }
