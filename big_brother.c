@@ -83,7 +83,7 @@ int bb_init_log_dir(u32 start_cluster) {
     if(isInit == 1) {
         root_node = fat_tree_node_search(vol->file_tree,BB_DIRNAME);
         GList *children = fat_file_read_children(loaded_bb_dir);
-        fat_tree_insert(vol->file_tree,root_node,g_list_nth_data(children,1));
+        fat_tree_insert(vol->file_tree,root_node,g_list_nth_data(children,0));
     }
 
     return -errno;
