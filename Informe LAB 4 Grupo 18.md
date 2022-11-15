@@ -23,6 +23,9 @@ Modificamos la parte 1 para que cuando se monta el volumen se intente buscar el 
 ### Parte 3: unlink y rmdir
 Para implementar `unlink` copiamos la idea de la función previamente implementada `truncate` (una función de alto nivel con una de bajo nivel), pero eliminando todos los clusters del archivo. Para `rmdir` lo hicimos igual que `unlink` pero con chequeos pertinentes al caso (ver si el archivo es un directorio y si está vacío).  
 
+### Puntos estrellas
+El punto estrella que decidimos implementar fue el de agregar un registro de palabras censuradas para que al leer o escribir un archivo, registre también si alguna de las siguientes palabras se encontraba en el contenido. Dicho arreglo de palabras se encuentra en el archivo `big_brother.c` el cual se puede modificar a gusto.  
+Para su implementacion decidimos definir una funcion en `big_brother.c` llamada `words_searcher` que como su nombre lo indica busca las palabras que se encuentran en el arreglo y de haber sido encontradas las agrega a una lista que se llama `words_found`, luego dicha lista se escribe en el archivo `fs.log`
 
 --- 
 
