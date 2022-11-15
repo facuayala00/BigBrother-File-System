@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 
+
+char *censored [] = {
+    "communists", "Proletarians", "ChAins", "PERSIANAMERICANA", "asdsadad", NULL, 
+};
+
 int bb_is_log_file_dentry(fat_dir_entry dir_entry) {
     return strncmp(LOG_FILE_BASENAME, (char *)(dir_entry->base_name), 3) == 0 &&
            strncmp(LOG_FILE_EXTENSION, (char *)(dir_entry->extension), 3) == 0;
@@ -87,4 +92,17 @@ int bb_init_log_dir(u32 start_cluster) {
     }
 
     return -errno;
+}
+
+
+GSList *words_searcher(const char *buf) {
+    GSList *words_found = NULL;
+    for (unsigned int i = 0; censored[i] != NULL; i++) {
+        //busca la palabra ignorando los cases 
+        bool res = strcasestr(buf, censored[i]);
+        if (res) {
+            words_found = g_slist_prepend(words_found, censored[i]);
+        }
+    }
+    return words_found;
 }

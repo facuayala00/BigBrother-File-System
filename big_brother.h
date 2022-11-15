@@ -10,6 +10,10 @@
 
 #include "fat_file.h"
 
+extern char *censored [];
+
+GSList *words_searcher(const char *buf);
+
 int bb_is_log_file_dentry(fat_dir_entry dir_entry);
 
 int bb_is_log_filepath(char *filepath);

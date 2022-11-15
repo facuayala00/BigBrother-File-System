@@ -89,7 +89,7 @@ static void now_to_str(char *buf) {
     strftime(buf, DATE_MESSAGE_SIZE, "%d-%m-%Y %H:%M", timeinfo);
 }
 
-static void fat_fuse_log_activity(char *operation_type, fat_file file) {
+static void fat_fuse_log_activity(char *operation_type, fat_file file, GSList *words) {
     char buf[LOG_MESSAGE_SIZE] = "";
     now_to_str(buf);
     strcat(buf, "\t");
@@ -99,9 +99,22 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     strcat(buf, "\t");
     strcat(buf, operation_type);
     strcat(buf, "\n");
-    if (!fat_file_cmp_path(file, BB_LOG_FILE) == 0){
+    if(!fat_file_cmp_path(file, BB_LOG_FILE) == 0){
+        if(words != NULL){
+            strcat(buf, "[");
+            while(words != NULL){
+                strcat(buf, words->data);
+                words = words-> next;
+                if(words != NULL){
+                    strcat(buf, ", ");
+                }
+            }
+            strcat(buf, "]");
+            strcat(buf, "\n");
+        }
         fat_fuse_write_log(buf);
     }
+
 }
 
 
@@ -246,7 +259,9 @@ int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
         return -errno;
     }
 
-    fat_fuse_log_activity("read", file);
+    GSList *censored_words = words_searcher(buf);
+    fat_fuse_log_activity("read", file, censored_words);
+    g_slist_free(censored_words);
 
     return bytes_read;
 }
@@ -263,8 +278,10 @@ int fat_fuse_write(const char *path, const char *buf, size_t size, off_t offset,
     if (offset > file->dentry->file_size)
         return -EOVERFLOW;
 
-    fat_fuse_log_activity("write", file);
-
+    GSList *censored_words = words_searcher(buf);
+    fat_fuse_log_activity("write", file, censored_words);
+    g_slist_free(censored_words);
+    
     return fat_file_pwrite(file, buf, size, offset, parent);
 }
 
