@@ -7,10 +7,9 @@
 #define LOG_FILE_BASENAME "fs"
 #define LOG_FILE_EXTENSION "log"
 
-
 #include "fat_file.h"
 
-extern char *censored [];
+extern char *censored[];
 
 GSList *words_searcher(const char *buf);
 
