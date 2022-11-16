@@ -72,6 +72,7 @@ static int fat_fuse_write_log(const char *text){
         return 1;
     }
     log_file = fat_tree_get_file(log_node);
+    
     parent = fat_tree_get_parent(log_node);
 
 
