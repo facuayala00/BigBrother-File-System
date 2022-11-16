@@ -14,6 +14,7 @@
 #include "fat_volume.h"
 #include <alloca.h>
 #include <asm-generic/errno-base.h>
+#include <assert.h>
 #include <errno.h>
 #include <gmodule.h>
 #include <libgen.h>
@@ -22,30 +23,28 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
 
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
 
-
-static int fat_use_log_create(void){
+static int fat_use_log_create(void) {
     fat_volume vol;
     fat_tree_node file_node;
     errno = 0;
     vol = get_fat_volume();
     file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
-    if (file_node != NULL){
+    if (file_node != NULL) {
         DEBUG("ya existe el archivo mi rey");
         return -errno;
     }
     int mknod_res = fat_fuse_mknod(BB_LOG_FILE, 0, 0);
-    if (mknod_res != 0){
+    if (mknod_res != 0) {
         DEBUG("NO SE PUEDE CREAR");
-        return -errno;   
+        return -errno;
     }
 
     file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
-    if (file_node == NULL){
+    if (file_node == NULL) {
         DEBUG("No se encuentra el archivo 1");
         return -errno;
     }
@@ -53,30 +52,29 @@ static int fat_use_log_create(void){
     fat_file log_node = fat_tree_get_file(file_node);
     if (log_node == NULL) {
         DEBUG("No se encuentra el archivo 2");
-        return  -errno;
+        return -errno;
     }
-
 
     return 0;
 }
 
-static int fat_fuse_write_log(const char *text){
+static int fat_fuse_write_log(const char *text) {
     fat_volume vol;
     fat_tree_node log_node;
     fat_file log_file;
     fat_file parent;
     vol = get_fat_volume();
-    log_node = fat_tree_node_search(vol->file_tree,BB_LOG_FILE);
-    if(log_node == NULL){
+    log_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
+    if (log_node == NULL) {
         DEBUG(LOG_FILE_PATH "no existe el archivo mi rey");
         return 1;
     }
     log_file = fat_tree_get_file(log_node);
-    
+
     parent = fat_tree_get_parent(log_node);
 
-
-    fat_file_pwrite(log_file, text, strlen(text), log_file->dentry->file_size, parent);
+    fat_file_pwrite(log_file, text, strlen(text), log_file->dentry->file_size,
+                    parent);
     DEBUG("SE ESCRIBIÓ CORRECTAMENTE EN EL FS.LOG");
 
     return 0;
@@ -100,11 +98,10 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     strcat(buf, "\t");
     strcat(buf, operation_type);
     strcat(buf, "\n");
-    if (!fat_file_cmp_path(file, BB_LOG_FILE) == 0){
+    if (!fat_file_cmp_path(file, BB_LOG_FILE) == 0) {
         fat_fuse_write_log(buf);
     }
 }
-
 
 /* Get file attributes (file descriptor version) */
 int fat_fuse_fgetattr(const char *path, struct stat *stbuf,
@@ -169,9 +166,9 @@ int fat_fuse_opendir(const char *path, struct fuse_file_info *fi) {
 
 /* Read directory children. Calls function fat_file_read_children which returns
  * a list of files inside a GList. The children were read from the directory
- * entries in the cluster of the directory. 
- * This function iterates over the list of children and adds them to the 
- * file tree. 
+ * entries in the cluster of the directory.
+ * This function iterates over the list of children and adds them to the
+ * file tree.
  * This operation should be performed only once per directory, the first time
  * readdir is called.
  */
@@ -209,12 +206,13 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
             return -errno;
         }
     }
-    
+
     children = fat_tree_flatten_h_children(dir_node);
     child = children;
     while (*child != NULL) {
         // Hide fs.log from ls
-        if ((!fat_file_cmp_path(*child, BB_DIRNAME) == 0) && (!fat_file_cmp_path(*child, BB_LOG_FILE) == 0)) {
+        if ((!fat_file_cmp_path(*child, BB_DIRNAME) == 0) &&
+            (!fat_file_cmp_path(*child, BB_LOG_FILE) == 0)) {
             error = (*filler)(buf, (*child)->name, NULL, 0);
             if (error != 0) {
                 free(children);
@@ -239,7 +237,6 @@ int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
     fat_tree_node file_node = (fat_tree_node)fi->fh;
     fat_file file = fat_tree_get_file(file_node);
     fat_file parent = fat_tree_get_parent(file_node);
-
 
     bytes_read = fat_file_pread(file, buf, size, offset, parent);
 
@@ -396,12 +393,12 @@ int fat_fuse_unlink(const char *path) {
     file = fat_tree_get_file(file_node);
     if (fat_file_is_directory(file))
         return -EISDIR;
-    parent = fat_tree_get_parent(file_node); 
-    //hasta este punto es todo igual a truncate
+    parent = fat_tree_get_parent(file_node);
+    // hasta este punto es todo igual a truncate
 
     fat_file_unlink(file, parent);
-    fat_tree_delete(vol->file_tree, path); //hay que eliminarlo del arbol
-    //sin esta linea el archivo sigue estando hasta que desmontemos el disco ja
+    fat_tree_delete(vol->file_tree, path); // hay que eliminarlo del arbol
+    // sin esta linea el archivo sigue estando hasta que desmontemos el disco ja
 
     return -errno;
 }
@@ -419,12 +416,12 @@ int fat_fuse_rmdir(const char *path) {
     file = fat_tree_get_file(file_node);
     if (!fat_file_is_directory(file))
         return -ENOTDIR;
-    if(file->dir.nentries != 0) // Borramos solo si el directorio está vacío
+    if (file->dir.nentries != 0) // Borramos solo si el directorio está vacío
         return -ENOTEMPTY;
 
-    parent = fat_tree_get_parent(file_node); 
+    parent = fat_tree_get_parent(file_node);
     fat_file_unlink(file, parent);
-    fat_tree_delete(vol->file_tree, path); 
-    
+    fat_tree_delete(vol->file_tree, path);
+
     return -errno;
 }
