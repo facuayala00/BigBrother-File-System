@@ -24,8 +24,10 @@ Modificamos la parte 1 para que cuando se monta el volumen se intente buscar el 
 Para implementar `unlink` copiamos la idea de la función previamente implementada `truncate` (una función de alto nivel con una de bajo nivel), pero eliminando todos los clusters del archivo. Para `rmdir` lo hicimos igual que `unlink` pero con chequeos pertinentes al caso (ver si el archivo es un directorio y si está vacío).  
 
 ### Puntos estrellas
-El punto estrella que decidimos implementar fue el de agregar un registro de palabras censuradas para que al leer o escribir un archivo, registre también si alguna de las siguientes palabras se encontraba en el contenido. Dicho arreglo de palabras se encuentra en el archivo `big_brother.c` el cual se puede modificar a gusto.  
+El primer punto estrella que decidimos implementar fue el de agregar un registro de palabras censuradas para que al leer o escribir un archivo, registre también si alguna de las siguientes palabras se encontraba en el contenido. Dicho arreglo de palabras se encuentra en el archivo `big_brother.c` el cual se puede modificar a gusto.  
 Para su implementacion decidimos definir una funcion en `big_brother.c` llamada `words_searcher` que como su nombre lo indica busca las palabras que se encuentran en el arreglo y de haber sido encontradas las agrega a una lista que se llama `words_found`, luego dicha lista se escribe en el archivo `fs.log`
+
+Luego, decidimos implementar el punto estrella numero 1, el cual era agregar una opcion para no ocultar nuestro fs.log. Lo que hicimos fue analizar el comportamiento de las opciones en `fat_fuse.c` en la funcion main y hacer las modificaciones pertinentes, las cuales eran modificar un switch case, un array y una string. Lineas: `fat_fuse.c:31, fat_fuse.c:32 y fat_fuse.c:85`, Tambien agregamos una variable global inicializada en True. Luego modificamos la linea `fat_fuse_ops.c:230` agregando un `OR` negado, de forma que en caso de que usemos la opcion para mostrar el archivo nuestra variable se vuelva `TRUE` que es un valor absorvente en un `OR` logico y de tal forma mostraria todo archivo. En caso contrario, se volveria `FALSE`, el cual es neutro en el operador previamente mencionado, entonces no alteraria el funcionamiento del programa.
 
 --- 
 
@@ -46,7 +48,7 @@ Al hacer ls -l se ejecuta el programa de nombre ls, el cual realiza llamadas a s
 
 
 5. **¿Por qué tienen que escribir las entradas de directorio manualmente pero no tienen que guardar la tabla FAT cada vez que la modifican?**  
-Escribimos manualmente las entradas de directorio porque las funciones que usamos para trabajar con la tabla FAT actualizan la tabla en memoria y en disco al mismo tiempo, la tabla FAT tiene su descriptor de archivo abierto que se pasa como parámetro en varias funciones de fat_table.c, estas funciones leen y escriben este archivo. Este no era el caso con las entradas de directorio, donde había disctincón entre el árbol de directorios guardado en memoria y las entradas de directorio guardadas en el disco.
+Escribimos manualmente las entradas de directorio porque las funciones que usamos para trabajar con la tabla FAT actualizan la tabla en memoria y en disco al mismo tiempo, la tabla FAT tiene su descriptor de archivo abierto que se pasa como parámetro en varias funciones de fat_table.c, estas funciones leen y escriben este archivo. Este no era el caso con las entradas de directorio, donde había distinción entre el árbol de directorios guardado en memoria y las entradas de directorio guardadas en el disco.
 
 
 6. **Para los sistemas de archivos FAT32, la tabla FAT, ¿siempre tiene el mismo tamaño? En caso de que sí, ¿qué tamaño tiene?**  
