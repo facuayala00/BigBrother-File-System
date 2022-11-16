@@ -27,6 +27,8 @@
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
 
+extern bool hideFsLog;
+
 
 static int fat_use_log_create(void){
     fat_volume vol;
@@ -226,7 +228,8 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     child = children;
     while (*child != NULL) {
         // Hide fs.log from ls
-        if ((!fat_file_cmp_path(*child, BB_DIRNAME) == 0) && (!fat_file_cmp_path(*child, BB_LOG_FILE) == 0)) {
+        if (((!fat_file_cmp_path(*child, BB_DIRNAME) == 0) && 
+        (!fat_file_cmp_path(*child, BB_LOG_FILE) == 0)) || !hideFsLog) {
             error = (*filler)(buf, (*child)->name, NULL, 0);
             if (error != 0) {
                 free(children);
